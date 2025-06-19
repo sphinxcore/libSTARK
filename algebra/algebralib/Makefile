@@ -1,27 +1,36 @@
 include ../../flags.mk
 
-WHICH				:= $(shell which which)
-MKDIR				:= $(shell $(WHICH) mkdir)
-DIRNAME				:= $(shell $(WHICH) dirname)
+INCFLAGS=-Isrc -I$(FFTINC)
 
-CFLAGS+=
-CPPFLAGS+=
-INCFLAGS=-I$(FFTINC) -Iheaders
-TARGET=$(BLDDIR)/libalgebralib.a
+SRCDIR  = src
+SRCEXT  = cpp
+OBJDIR  = ./bin/obj
+BINDIR  = ./bin
 
-SRCS:= $(shell ls src/*.cpp)
-OBJS=$(addprefix $(BLDDIR)/, $(SRCS:.cpp=.o))
+SRCS    := $(shell find $(SRCDIR) -name '*.$(SRCEXT)')
+SRCDIRS := $(shell find $(SRCDIR) -name '*.$(SRCEXT)' -exec dirname {} \; | uniq)
+OBJS    := $(patsubst %.$(SRCEXT),$(OBJDIR)/%.o,$(SRCS))
 
-$(BLDDIR)/%.o: %.cpp
-#	@echo 'Building file: $@ ($<)'
-	@$(MKDIR) -p $(shell $(DIRNAME) $@)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(INCFLAGS) -c -o "$@" "$<"
+TARGET=$(BINDIR)/algebralib.a
 
 all: $(TARGET)
 
-clean:
-	$(RM) -f $(TARGET) $(OBJS) $(DEPS)
+$(TARGET): buildrepo $(OBJS)
+    $(AR) -r "$@" $(OBJS) $(LIBS)
 
-$(TARGET): $(OBJS)
-#	@echo 'Building target: $@'
-	ar -r  "$@" $(OBJS)
+$(OBJDIR)/%.o: %.$(SRCEXT)
+    $(CC) $(CFLAGS) $(CPPFLAGS) $(INCFLAGS) -fPIC -c -o "$@" "$<"
+
+clean:
+    $(RM) -rf $(BINDIR) $(OBJDIR) $(DEPS)
+
+buildrepo:
+    $(call make-repo)
+
+define make-repo
+for dir in $(SRCDIRS); \
+    do \
+    mkdir -p $(OBJDIR)/$$dir; \
+    done
+mkdir -p $(BINDIR)
+endef

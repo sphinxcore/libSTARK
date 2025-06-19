@@ -1,6 +1,6 @@
-include ../../flags.mk
+include ../flags.mk
 
-INCFLAGS=-Isrc
+INCFLAGS=-Isrc -I$(ALGEBRAINC) -I$(FFTINC)
 
 SRCDIR  = src
 SRCEXT  = cpp
@@ -11,12 +11,16 @@ SRCS    := $(shell find $(SRCDIR) -name '*.$(SRCEXT)')
 SRCDIRS := $(shell find $(SRCDIR) -name '*.$(SRCEXT)' -exec dirname {} \; | uniq)
 OBJS    := $(patsubst %.$(SRCEXT),$(OBJDIR)/%.o,$(SRCS))
 
-TARGET=$(BINDIR)/fft.a
+TARGET=$(BINDIR)/libstark.a
+TARGET_SO=$(BINDIR)/libstark.so
 
-all: $(TARGET)
+all: $(TARGET) $(TARGET_SO)
 
 $(TARGET): buildrepo $(OBJS)
-    $(AR) -r "$@" $(OBJS) $(LIBS)
+    ar -r "$@" $(OBJS) $(LIBS)
+
+$(TARGET_SO): buildrepo $(OBJS)
+    $(CC) -shared -o "$@" $(OBJS) $(LDFLAGS)
 
 $(OBJDIR)/%.o: %.$(SRCEXT)
     $(CC) $(CFLAGS) $(CPPFLAGS) $(INCFLAGS) -fPIC -c -o "$@" "$<"
